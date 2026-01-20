@@ -84,6 +84,16 @@ resource "coder_agent" "main" {
   startup_script = <<-EOT
     set -e
 
+    # CRITICAL: Copy credentials FIRST, before ANY other operations
+    # The Claude Code module runs in parallel and needs credentials immediately
+    mkdir -p ~/.claude
+    if [ -f /tmp/.claude-host/.credentials.json ]; then
+      cp /tmp/.claude-host/.credentials.json ~/.claude/.credentials.json
+      echo "Claude credentials loaded from host machine."
+    else
+      echo "Warning: No Claude credentials found. Run 'claude login' on host machine."
+    fi
+
     # SSH keys are mounted read-only to .ssh-host, copy to writable .ssh
     # Use sudo to read root-owned mounted files, then fix ownership
     sudo rm -rf ~/.ssh 2>/dev/null || true
@@ -119,14 +129,6 @@ resource "coder_agent" "main" {
     if ! command -v happy &> /dev/null; then
       echo "Installing Happy..."
       sudo npm install -g happy-coder
-    fi
-
-    # Copy only credentials from host mount (not entire directory to avoid cached path issues)
-    if [ -f /tmp/.claude-host/.credentials.json ]; then
-      cp /tmp/.claude-host/.credentials.json ~/.claude/.credentials.json
-      echo "Claude credentials loaded from host machine."
-    else
-      echo "Warning: No Claude credentials found. Run 'claude login' on host machine."
     fi
 
     # Install SuperClaude commands
