@@ -125,12 +125,6 @@ resource "coder_agent" "main" {
       sudo npm install -g @anthropic-ai/claude-code
     fi
 
-    # Install Happy (Claude Code mobile client)
-    if ! command -v happy &> /dev/null; then
-      echo "Installing Happy..."
-      sudo npm install -g happy-coder
-    fi
-
     # Install SuperClaude commands
     if [ ! -d ~/.claude/commands/sc ]; then
       echo "Installing SuperClaude..."
@@ -189,10 +183,6 @@ resource "coder_agent" "main" {
       "serena": {
         "command": "uvx",
         "args": ["--from", "git+https://github.com/oraios/serena", "serena", "start-mcp-server"]
-      },
-      "vibe-kanban": {
-        "command": "npx",
-        "args": ["-y", "vibe-kanban", "--mcp"]
       },
       "magic": {
         "command": "npx",
@@ -322,20 +312,6 @@ resource "coder_script" "code_server" {
   EOT
 }
 
-# VibeKanban background script (separate to avoid blocking startup)
-resource "coder_script" "vibekanban" {
-  agent_id     = coder_agent.main.id
-  display_name = "VibeKanban"
-  icon         = "/icon/kanban.svg"
-  run_on_start = true
-  script       = <<-EOT
-    #!/bin/bash
-    mkdir -p ~/.vibe-kanban
-    cd ~/.vibe-kanban
-    PORT=5173 exec npx -y vibe-kanban --no-open
-  EOT
-}
-
 # VS Code Web App
 resource "coder_app" "code-server" {
   agent_id     = coder_agent.main.id
@@ -354,26 +330,6 @@ resource "coder_app" "terminal" {
   display_name = "Terminal"
   icon         = "/icon/terminal.svg"
   command      = "/bin/bash"
-}
-
-# VibeKanban App
-resource "coder_app" "vibekanban" {
-  agent_id     = coder_agent.main.id
-  slug         = "vibekanban"
-  display_name = "VibeKanban"
-  url          = "http://localhost:5173"
-  icon         = "/icon/kanban.svg"
-  subdomain    = true
-  share        = "owner"
-}
-
-# Happy - Claude Code Mobile Client (https://happy.engineering)
-resource "coder_app" "happy" {
-  agent_id     = coder_agent.main.id
-  slug         = "happy"
-  display_name = "Happy"
-  icon         = "/icon/mobile.svg"
-  command      = "happy"
 }
 
 resource "docker_volume" "home_volume" {
